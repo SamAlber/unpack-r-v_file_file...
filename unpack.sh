@@ -73,13 +73,14 @@ decompress_file() {
     local is_initial="$2"
     local decompress_success=false
 
-    # Determine the MIME type of the file and select the appropriate decompression tool
-    case "$(file --mime-type -b "$file")" in
+    # Determine the MIME type of the file and select the appropriate decompression tool 
+    # -b will show only the file type without it's name 
+    case "$(file --mime-type -b "$file")" in 
         "application/gzip")
             # Generate a unique file name for the decompressed file
             file_name=$(generate_unique_file_name "${file}")
             # Decompress the file using gunzip and save to the generated file name
-            if gunzip -c "$file" > "$file_name"; then
+            if gunzip -c "$file" > "$file_name"; then # -c for stdout 
                 decompress_success=true
                 ((decompressed_count++))  # Increment the decompressed file count
                 echo "Unpacking $file..."
@@ -98,7 +99,7 @@ decompress_file() {
         "application/zip")
             # For ZIP files, unzip to a unique directory
             file_name=$(generate_unique_file_name "${file}")
-            if unzip -o "$file" -d "$file_name"; then
+            if unzip -o "$file" -d "$file_name"; then # -o for overwrite
                 decompress_success=true
                 ((decompressed_count++))
                 echo "Unpacking $file..."
@@ -107,7 +108,7 @@ decompress_file() {
             ;;
         "application/x-compress")
             file_name=$(generate_unique_file_name "${file}")
-            if uncompress -c "$file" > "$file_name"; then
+            if uncompress -c "$file" > "$file_name"; then # -c for stdout
                 decompress_success=true
                 ((decompressed_count++))
                 echo "Unpacking $file..."
@@ -133,8 +134,14 @@ process_target() {
     files=$(find "$target" -type f)
     
     while IFS= read -r file; do
-        decompress_file "$file" false
-    done <<< "$files"
+        decompress_file "$file" false # passing false because a directory is not a file and can't be compressed (edge case)
+    done <<< "$files" 
+    # files is not a file! But rather a variable that contains a "row" separated with \n so we have a long column of file names
+
+    # <<< passes the contents per iteration from a file variable that contains a column of rows as with $files (<<< works with text) and read saves each row in line per iteration
+
+    # < operator is used to open and read the contents of a file by its filename! 
+    # read will read each row of this passed contents of a file name so in this case read will try to open the long "row" = column as file but it's not
 }
 
 # Main loop to process all arguments passed to the script (as a list stored in $@)
