@@ -63,19 +63,20 @@ generate_unique_file_name() {
     local base_name="$1"
     local unique_suffix
     unique_suffix=$(openssl rand -hex 4)  # Generates a unique random suffix 
-    echo "${base_name}_unpack_$unique_suffix"
+    echo "${base_name}_unpack_$unique_suffix" # ${base_name} otherwise $ will think evrything after $ is a variable
+    # $unique_suffix can be without "" because the whole echo is enclosed in "", hence even spaces or special characters will stay as is. 
 }
 
 # Function to decompress a file using the appropriate method
 decompress_file() {
-    local file="$1"
+    local file="$1" # "" Because there may be spaces/special characters in the argument name 
     local file_name
-    local is_initial="$2"
+    local is_initial="$2" # Good practice to always use ""
     local decompress_success=false
 
     # Determine the MIME type of the file and select the appropriate decompression tool 
     # -b will show only the file type without it's name 
-    case "$(file --mime-type -b "$file")" in 
+    case "$(file --mime-type -b "$file")" in # "" because we don't want special symbols to be perceived 
         "application/gzip")
             # Generate a unique file name for the decompressed file
             file_name=$(generate_unique_file_name "${file}")
@@ -88,7 +89,8 @@ decompress_file() {
             fi
             ;;
         "application/x-bzip2")
-            file_name=$(generate_unique_file_name "${file}")
+            file_name=$(generate_unique_file_name "${file}")  # ${} are not necessary because there is a space between the function name and the variable 
+            # so even "$file" or $file (if we know there are no spaces eg; file="hot dog") are ok 
             if bunzip2 -c "$file" > "$file_name"; then
                 decompress_success=true
                 ((decompressed_count++))
